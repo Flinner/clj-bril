@@ -46,7 +46,7 @@
          blocks []
          [instr & remaining-body] body]
     (if-not instr
-      (conj blocks cur-block) ; in last iteration, merge last block with rest of blocks
+      (if (empty? cur-block) blocks (conj blocks cur-block)) ; in last iteration, merge last block with rest of blocks
       (let [cur-block+cur-instr  (conj cur-block instr)
             blocks+cur-block     (conj blocks cur-block)
             blocks+cur-block+cur-instr (conj blocks cur-block+cur-instr)]
@@ -68,11 +68,15 @@
   ```
   Output:
   ```clojure
-  [
-   {:label b0, :succ [2]          :block [...]}          ; This is it `jmp`s to \"somewhere\"
-   {:label b1, :succ [2]          :block [...]}          ; This is because it doesn't jmp anywhere
-   {:label \"somewhere\", :succ [] :block [...]}          ; Exit!
-  ]
+    [[:b0
+      {:block [...],
+       :succ [:somewhere]}]
+     [:b1
+      {:block [...],
+       :succ [:somewhere]}]
+     [:somewhere
+      {:block [...],
+       :succ [nil]}]]
   ```
   "
   [blocks]
