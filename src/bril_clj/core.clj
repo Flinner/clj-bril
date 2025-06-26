@@ -13,28 +13,30 @@
   "shell equivelent of bril2json < $filename"
   [filename]
   (json/read-str
-    (:out (sh "/home/lambda/.local/bin/bril2json" :in (slurp filename)))))
+    (:out (sh "/home/lambda/.local/bin/bril2json" :in (slurp filename)))
+    :key-fn keyword))
 
 
 ; tmp
-(def bril-json ((bril2json "../bril/test/interp/core/jmp.bril") "functions"))
-(def body ((bril-json 0) "instrs"))
+(def bril-json (:functions (bril2json "../bril/test/interp/core/jmp.bril"))) 
+(def body (:instrs (bril-json 0))) 
 
 (defn mycfg
   [bril-json]
-  (for [func bril-json :let [instrs (func "instrs")]] (form-blocks instrs)))
+  (for [func bril-json :let [instrs (:instrs func)]] (form-blocks instrs)))
 
 ; Helper functions
 (defn control-instr?
   [instr]
-  (some #(= (instr "op") %) '("jmp" "br" "call" "ret")))
-(defn label-instr? [instr] ((complement nil?) (instr "label")))
+  (some #(= (:op instr) %) '("jmp" "br" "call" "ret")))
+(defn label-instr? [instr] ((complement nil?) (:label instr)))
 
 
-(control-instr? {"dest" "v", "op" "const", "type" "int", "value" 2})
-(control-instr? {"labels" ["somewhere"], "op" "jmp"})
-(label-instr? {"label" "somewhere"})
-(label-instr? {"labels" ["somewhere"], "op" "jmp"})
+;; Move to Testing??
+(control-instr? {:dest "v", :op "const", :type "int", :value 4})
+(control-instr? {:labels ["somewhere"], :op "jmp"})
+(label-instr? {:label "somewhere"})
+(label-instr? {:labels ["somewhere"], :op "jmp"})
 
 (defn form-blocks
   [body]
@@ -57,4 +59,4 @@
 
 
 
-(for [func bril-json :let [instrs (get func "instrs")]] (form-blocks instrs))
+(for [func bril-json :let [instrs (:instrs func)]] (form-blocks instrs))
