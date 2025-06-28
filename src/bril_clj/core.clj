@@ -16,9 +16,10 @@
    :key-fn keyword))
 
 ; tmp
-(def bril-json (:functions (bril2json "../bril/test/interp/core/jmp.bril")))
+(def bril-json (:functions (bril2json "../bril/test/interp/core/add-overflow.bril")))
 (def body (:instrs (bril-json 0)))
 
+(declare form-blocks)
 (defn mycfg
   [bril-json]
   (for [func bril-json :let [instrs (:instrs func)]] (form-blocks instrs)))
@@ -54,9 +55,8 @@
               (label-instr? instr) (recur [instr] blocks+cur-block remaining-body)
               :else (recur cur-block+cur-instr blocks remaining-body))))))
 
-(defn form-cfg-by-index
-  "Takes a Vector of blocks, see [[form-blocks]], and returns a cfg-by-index.
-  Later, you can use [[from-cfg-map]] to convert it to hash map shape.
+(defn form-cfg
+  "Takes a Vector of blocks, see [[form-blocks]], and returns a cfg.
 
   Example Input:
   ```clojure
@@ -124,4 +124,33 @@
        flatten
        ((partial apply hash-map))))
 
-(form-cfg-by-index (form-blocks body))
+(def cfg (form-cfg (form-blocks body)))
+
+(defn cfg->graphiz
+  "Convert a CFG to graphiz string"
+  [cfg]
+  (->> cfg
+      ;; [[:b0
+      ;;   {:block [...],
+      ;;    :succ [:somewhere]}]
+      ;;  [:b1
+      ;;   {:block [...],
+      ;;    :succ [:somewhere]}]
+      ;;  [:somewhere
+      ;;   {:block [...],
+      ;;    :succ [nil]}]]
+
+       (map (fn [block]
+              {:label (first block), :succ (:succ (second block))}))
+      ;; ({:label :b1, :succ [:somewhere]}
+      ;;  {:label :b0, :succ [:somewhere]}
+      ;;  {:label :somewhere, :succ [nil]})
+       (map (fn [{:keys [label succ]}]
+              (map #(if % (str (name label) " -> " (name %) ";\n")) succ)))
+       flatten
+      ;; ":b1 -> :somewhere;\n:b0 -> :somewhere;\n"
+       (apply str)
+       (#(str "digraph" " " "EXAMPLE_TODO" " " "{\n" % "}"))))
+
+
+(cfg->graphiz cfg)
