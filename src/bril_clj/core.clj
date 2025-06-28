@@ -80,7 +80,16 @@
   ```
   "
   [blocks]
-  (def labels-to-idx (into {} (keep-indexed #(when (:label (first %2)) {(:label (first %2)) %1}) blocks)))
+  (let [labels-to-idx (into {} (keep-indexed #(when (:label (first %2)) {(:label (first %2)) %1}) blocks))
+        cfg-indexed
+        (vec (map-indexed (fn [idx, block]
+                            {:label (keyword (if-let [predefined-label (:label (first block))]
+                                               predefined-label
+                                               (str "b" idx))) ; Label is of the first block, if any!
+                             :succ  (if-let [labels (:labels (last block))]
+                                      (mapv labels-to-idx labels) ; convert to idx if they exist, (it SHOULD exist).
+                                      [(if-not (= (inc idx) (count blocks)) (+ idx 1))]) ; it is just idx+1; unless for last element is nil.
+                             :block block}) blocks))])
 
   ; Here is how the data in `cfg-indexed` looks now:
   ; [
@@ -89,15 +98,6 @@
   ;   {:label \"somewhere\", :succ [] :block [...]}))          ; Exit!
   ; ]
   ; we need to convert it into a `hash-map` and resolve the `:succ`
-  (def cfg-indexed
-    (vec (map-indexed (fn [idx, block]
-                        {:label (keyword (if-let [predefined-label (:label (first block))]
-                                           predefined-label
-                                           (str "b" idx))) ; Label is of the first block, if any!
-                         :succ  (if-let [labels (:labels (last block))]
-                                  (mapv labels-to-idx labels) ; convert to idx if they exist, (it SHOULD exist).
-                                  [(if-not (= (inc idx) (count blocks)) (+ idx 1))]) ; it is just idx+1; unless for last element is nil.
-                         :block block}) blocks)))
   (->> cfg-indexed
        (mapv (fn [block]
                (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
@@ -154,3 +154,5 @@
 
 
 (cfg->graphiz cfg)
+;; Send to
+;; echo "$OUTPUT" | dot -Tpng | feh -
