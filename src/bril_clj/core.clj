@@ -17,12 +17,16 @@
 
 ; tmp
 (def bril-json (:functions (bril2json "../bril/test/interp/core/add-overflow.bril")))
-(def body (:instrs (bril-json 0)))
+(def body   (:instrs (bril-json 0)))
 
 (declare form-blocks)
 (defn mycfg
   [bril-json]
-  (for [func bril-json :let [instrs (:instrs func)]] (form-blocks instrs)))
+  (for [func bril-json :let [instrs (:instrs func)]]
+    {:name (:name func)
+     :args (:args func)
+     :type (:type func)
+     :instrs (form-blocks instrs)}))
 
 ; Helper functions
 (defn control-instr?
@@ -42,6 +46,7 @@
 (label-instr? {:labels ["somewhere"], :op "jmp"})
 
 (defn form-blocks
+  "Take the body of a SINGLE function"
   [body]
   (loop [cur-block []
          blocks []
@@ -56,7 +61,7 @@
               :else (recur cur-block+cur-instr blocks remaining-body))))))
 
 (defn form-cfg
-  "Takes a Vector of blocks, see [[form-blocks]], and returns a cfg.
+  "Takes a Vector of blocks of a single function, see [[form-blocks]], and returns a cfg.
 
   Example Input:
   ```clojure
