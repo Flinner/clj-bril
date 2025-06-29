@@ -1,6 +1,7 @@
 (ns bril-clj.core
   (:require [clojure.data.json :as json]
             [bril-clj.graphviz :as graphviz]
+            [bril-clj.optimizationis.dead-code :as opt-dc]
             [bril-clj.bril :as bril]
             [clojure.java.shell :refer [sh]])
   (:gen-class))
@@ -16,8 +17,3 @@
 
 
 (def cfg (bril/bril-json->cfg bril-json))
-
-
-;; ===========================================================================
-;; Optimization Passes
-;; ===========================================================================

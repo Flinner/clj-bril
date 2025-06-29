@@ -1,7 +1,6 @@
 (ns bril-clj.bril
   (:require [clojure.data.json :as json]
-            [clojure.java.shell :refer [sh]])
-  (:gen-class))
+            [clojure.java.shell :refer [sh]]))
 
 ;;;; IO: Read and Write Utils
 
@@ -19,8 +18,11 @@
     {:name (:name func)
      :args (:args func)
      :type (:type func)
-     :instrs (form-cfg (form-blocks instrs))}))
+     :instrs (->> instrs
+                  (form-blocks)
+                  (form-cfg))}))
 
+;;;; Private Helpers!
 ; Helper functions
 (defn control-instr?
   [instr]
@@ -32,13 +34,15 @@
   (some #(= (:op instr) %) '("jmp" "br" "call" "ret")))
 (defn label-instr? [instr] ((complement nil?) (:label instr)))
 
-;; Move to Testing??
-(control-instr? {:dest "v", :op "const", :type "int", :value 4})
-(control-instr? {:labels ["somewhere"], :op "jmp"})
-(label-instr? {:label "somewhere"})
-(label-instr? {:labels ["somewhere"], :op "jmp"})
+;; ;; Move to Testing??
+;; (control-instr? {:dest "v", :op "const", :type "int", :value 4})
+;; (control-instr? {:labels ["somewhere"], :op "jmp"})
+;; (label-instr? {:label "somewhere"})
+;; (label-instr? {:labels ["somewhere"], :op "jmp"})
 
-(defn form-blocks
+
+
+(defn- form-blocks
   "Takes the body of a SINGLE function"
   [body]
   (loop [cur-block []
@@ -53,7 +57,7 @@
               (label-instr? instr) (recur [instr] blocks+cur-block remaining-body)
               :else (recur cur-block+cur-instr blocks remaining-body))))))
 
-(defn form-cfg
+(defn- form-cfg
   "Takes a Vector of blocks of a single function, see [[form-blocks]], and returns a cfg.
 
   Example Input:
