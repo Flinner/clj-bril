@@ -8,7 +8,7 @@
   [& args]
   (println "Hello, World!"))
 
-(defn bril2json
+(defn bril->json
   "shell equivelent of bril2json < $filename"
   [filename]
   (json/read-str
@@ -16,17 +16,17 @@
    :key-fn keyword))
 
 ; tmp
-(def bril-json (:functions (bril2json "../bril/test/interp/core/add-overflow.bril")))
+(def bril-json (:functions (bril->json "../bril/test/interp/core/add-overflow.bril")))
 (def body   (:instrs (bril-json 0)))
 
-(declare form-blocks)
-(defn mycfg
+(declare form-blocks form-cfg)
+(defn bril-json->cfg
   [bril-json]
   (for [func bril-json :let [instrs (:instrs func)]]
     {:name (:name func)
      :args (:args func)
      :type (:type func)
-     :instrs (form-blocks instrs)}))
+     :instrs (form-cfg (form-blocks instrs))}))
 
 ; Helper functions
 (defn control-instr?
@@ -94,7 +94,7 @@
                              :succ  (if-let [labels (:labels (last block))]
                                       (mapv labels-to-idx labels) ; convert to idx if they exist, (it SHOULD exist).
                                       [(if-not (= (inc idx) (count blocks)) (+ idx 1))]) ; it is just idx+1; unless for last element is nil.
-                             :block block}) blocks))])
+                             :block block}) blocks))]
 
   ; Here is how the data in `cfg-indexed` looks now:
   ; [
@@ -103,38 +103,45 @@
   ;   {:label \"somewhere\", :succ [] :block [...]}))          ; Exit!
   ; ]
   ; we need to convert it into a `hash-map` and resolve the `:succ`
-  (->> cfg-indexed
-       (mapv (fn [block]
-               (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
-    ;; ({:label :b0,
-    ;;   :succ [:somewhere],
-    ;;   :block [...]}
-    ;;  {:label :b1,
-    ;;   :succ [:somewhere],
-    ;;   :block [...]}
-    ;;  {:label :somewhere,
-    ;;   :succ [nil],
-    ;;   :block [...]})
-       (mapv (fn [{:keys [label succ block]}]
-               [label {:block block :succ succ}]))
-    ;; [[:b0
-    ;;   {:block [...],
-    ;;    :succ [:somewhere]}]
-    ;;  [:b1
-    ;;   {:block [...],
-    ;;    :succ [:somewhere]}]
-    ;;  [:somewhere
-    ;;   {:block [...],
-    ;;    :succ [nil]}]]
-       flatten
-       ((partial apply hash-map))))
+   (->> cfg-indexed
+        (mapv (fn [block]
+                (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
+     ;; ({:label :b0,
+     ;;   :succ [:somewhere],
+     ;;   :block [...]}
+     ;;  {:label :b1,
+     ;;   :succ [:somewhere],
+     ;;   :block [...]}
+     ;;  {:label :somewhere,
+     ;;   :succ [nil],
+     ;;   :block [...]})
+        (mapv (fn [{:keys [label succ block]}]
+                [label {:block block :succ succ}]))
+     ;; [[:b0
+     ;;   {:block [...],
+     ;;    :succ [:somewhere]}]
+     ;;  [:b1
+     ;;   {:block [...],
+     ;;    :succ [:somewhere]}]
+     ;;  [:somewhere
+     ;;   {:block [...],
+     ;;    :succ [nil]}]]
+        flatten
+        ((partial apply hash-map)))))
 
-(def cfg (form-cfg (form-blocks body)))
+(def cfg (bril-json->cfg bril-json))
 
-(defn cfg->graphiz
-  "Convert a CFG to graphiz string"
+
+
+;; ===========================================================================
+;; Graphiz
+;; ===========================================================================
+(defn cfg->graphviz
+  "Convert a CFG to graphviz string"
   [cfg]
   (->> cfg
+       (map :instrs)
+       (apply concat)
       ;; [[:b0
       ;;   {:block [...],
       ;;    :succ [:somewhere]}]
