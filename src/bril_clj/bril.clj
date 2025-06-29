@@ -2,25 +2,87 @@
   (:require [clojure.data.json :as json]
             [clojure.java.shell :refer [sh]]))
 
+(declare form-blocks form-cfg cfg->json)
 ;;;; IO: Read and Write Utils
 
-(defn bril->json
+(defn txt->json
   "shell equivelent of bril2json < $filename"
   [filename]
   (json/read-str
+   ; TODO: use proper $PATH!
    (:out (sh "/home/lambda/.local/bin/bril2json" :in (slurp filename)))
    :key-fn keyword))
 
-(declare form-blocks form-cfg)
-(defn bril-json->cfg
+(defn json->txt
+  "shell equivelent of `echo $JSON | bril2txt`"
+  [json]
+   ; TODO: use proper $PATH!
+  (:out (sh "/home/lambda/.local/bin/bril2txt" :in (json/write-str json))))
+     
+
+(defn brili<-json
+  "shell equivelent of `echo $JSON | brili`"
+  [json] (sh "/home/lambda/.deno/bin/brili" :in (json/write-str json)))
+
+(defn brili<-cfg
+  "shell equivelent of `echo $JSON | brili`"
+  [cfg]
+  (->> cfg
+       (cfg->json)
+       (brili<-json)))
+
+
+  
+
+;;;; JSON to CFG
+(defn json->cfg
   [bril-json]
-  (for [func bril-json :let [instrs (:instrs func)]]
+  (for [func (:functions bril-json) :let [instrs (:instrs func)]]
     {:name (:name func)
      :args (:args func)
      :type (:type func)
      :instrs (->> instrs
                   (form-blocks)
                   (form-cfg))}))
+
+;;;; CFG to JSON 
+(defn cfg->json
+ "Example Input:
+    ```
+    ({:name \"main\",
+    :args nil,
+    :type nil,
+    :instrs
+    [{:label :b0,
+        :succ [nil],
+        :block
+        [{:dest \"v0\", :op \"const\", :type \"int\", :value 1}
+        {:dest \"v1\", :op \"const\", :type \"int\", :value 2}
+        {:args [\"v0\" \"v1\"], :dest \"v2\", :op \"add\", :type \"int\"}
+        {:args [\"v2\"], :op \"print\"}]}]})
+    ```
+    Example Output
+    ```
+    {:functions
+        [{:instrs
+            [{:dest \"v0\", :op \"const\", :type \"int\", :value 1}
+                {:dest \"v1\", :op \"const\", :type \"int\", :value 2}
+                {:args [\"v0\" \"v1\"], :dest \"v2\", :op \"add\", :type \"int\"}
+                {:args [\"v2\"], :op \"print\"}],
+        :name \"main\"}]}
+    ```"
+  [cfg]
+  (->> cfg
+       (map (fn [{:keys [name args type instrs]}]
+              {:name name
+               :args args
+               :type type
+               :instrs
+               (->> instrs
+                    flatten
+                    (map :block)
+                    flatten)}))
+       (#(hash-map :functions %))))
 
 ;;;; Private Helpers!
 ; Helper functions
@@ -70,15 +132,15 @@
   ```
   Output:
   ```clojure
-    [[:b0
-      {:block [...],
-       :succ [:somewhere]}]
-     [:b1
-      {:block [...],
-       :succ [:somewhere]}]
-     [:somewhere
-      {:block [...],
-       :succ [nil]}]]
+      ({:label :b0,
+        :succ [:somewhere],
+        :block [...]}
+       {:label :b1,
+        :succ [:somewhere],
+        :block [...]}
+       {:label :somewhere,
+        :succ [nil],
+        :block [...]})
   ```
   "
   [blocks]
@@ -99,29 +161,7 @@
   ;   {:label b1, :succ [2]          :block [...]}))          ; This is because it doesn't jmp anywhere
   ;   {:label \"somewhere\", :succ [] :block [...]}))          ; Exit!
   ; ]
-  ; we need to convert it into a `hash-map` and resolve the `:succ`
+  ; we need to resolve the `:succ`
    (->> cfg-indexed
         (mapv (fn [block]
-                (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
-     ;; ({:label :b0,
-     ;;   :succ [:somewhere],
-     ;;   :block [...]}
-     ;;  {:label :b1,
-     ;;   :succ [:somewhere],
-     ;;   :block [...]}
-     ;;  {:label :somewhere,
-     ;;   :succ [nil],
-     ;;   :block [...]})
-        (mapv (fn [{:keys [label succ block]}]
-                [label {:block block :succ succ}]))
-     ;; [[:b0
-     ;;   {:block [...],
-     ;;    :succ [:somewhere]}]
-     ;;  [:b1
-     ;;   {:block [...],
-     ;;    :succ [:somewhere]}]
-     ;;  [:somewhere
-     ;;   {:block [...],
-     ;;    :succ [nil]}]]
-        flatten
-        ((partial apply hash-map)))))
+                (update block :succ (partial mapv #(get-in cfg-indexed [% :label]))))))))
