@@ -93,6 +93,10 @@
                     flatten
                     (map :block)
                     flatten)}))
+       ;; remove :args or :type if nil! :(
+       (map (fn [instr]
+              (remove #(nil? (second %)) instr)))
+       (map #(into {} %))
        (#(hash-map :functions %))))
 
 ;;;; Private Helpers!
