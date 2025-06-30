@@ -24,12 +24,23 @@
   "shell equivelent of `echo $JSON | brili`"
   [json] (sh "/home/lambda/.deno/bin/brili" :in (json/write-str json)))
 
+(defn brili-profile<-json
+  "shell equivelent of `echo $JSON | brili`"
+  [json] (sh "/home/lambda/.deno/bin/brili" "-p" :in (json/write-str json)))
+
 (defn brili<-cfg
   "shell equivelent of `echo $JSON | brili`"
   [cfg]
   (->> cfg
        (cfg->json)
        (brili<-json)))
+
+(defn brili-profile<-cfg
+  "shell equivelent of `echo $JSON | brili`"
+  [cfg]
+  (->> cfg
+       (cfg->json)
+       (brili-profile<-json)))
 
 
   
