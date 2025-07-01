@@ -108,7 +108,7 @@
 ; These Terminate Blocks
 (defn terminator-instr?
   [instr]
-  (some #(= (:op instr) %) '("jmp" "br" "call" "ret")))
+  (some #(= (:op instr) %) '("jmp" "br" "ret")))
 (defn label-instr? [instr] ((complement nil?) (:label instr)))
 
 ;; ;; Move to Testing??
