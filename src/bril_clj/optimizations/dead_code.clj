@@ -54,4 +54,5 @@
        ;; Now we need to remove all `:dest` that isn't in `block`
        ((fn [used]
           (remove #(and (not (used (:dest %)))
-                       (not (nil? (:dest %)))) block)))))
+                        (= "const" (:op %)))
+                   block)))))
