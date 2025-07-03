@@ -16,7 +16,6 @@
           (fn [instrs]
             (map #(update % :block f) instrs))))
 
-
 (defn apply-function-optimization-once
   [f cfg]
   (map f cfg))
@@ -28,17 +27,16 @@
       (if (= now past)
         now
         (recur now)))))
-  
+
 (defn apply-function-optimization-until-convergence
   [f cfg]
   (apply-until-convergence
-    (partial apply-function-optimization-once f)
-    cfg))
-  
+   (partial apply-function-optimization-once f)
+   cfg))
 
 (defn apply-block-optimization-until-convergence
   [f cfg]
   (apply-until-convergence
-    (partial apply-block-optimization-to-cfg-once f)
-    cfg))
-  
+   (partial apply-block-optimization-to-cfg-once f)
+   cfg))
+
