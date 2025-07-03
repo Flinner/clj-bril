@@ -40,11 +40,8 @@
           (recur instrs (conj to-keep-idxs (:idx instr)) def-not-used-future)
           ;; defs that are
           (recur instrs
-                 (if (and (def-not-used-now (:dest instr)))
-                   ;; discard last instruction and keep this
-                   (conj (disj to-keep-idxs (def-not-used-now (:dest instr)))
-                         (:idx instr))
-                   (conj to-keep-idxs (:idx instr)))
+                 (conj (disj to-keep-idxs (def-not-used-now (:dest instr)))
+                       (:idx instr))
                  def-not-used-future))))))
 
 (defn function|DCE-unused-variable-declarations
