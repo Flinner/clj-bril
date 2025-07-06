@@ -31,10 +31,7 @@
     (let [def-not-used-now (apply dissoc def-not-used (:args instr))
           def-not-used-future (assoc def-not-used-now (:dest instr) (:idx instr))]
       (if-not instr
-        ;; use `t
         (keep-indexed #(if (to-keep-idxs %1) %2) block)
-        ;; to-keep-idxs
-        ;; 
         (if-not (= "const" (:op instr))
           ;; Keep all non defs, they are non of this optimization's business
           (recur instrs (conj to-keep-idxs (:idx instr)) def-not-used-future)
