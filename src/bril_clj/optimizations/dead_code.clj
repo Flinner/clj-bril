@@ -98,6 +98,6 @@
     (opt/apply-block-optimization-to-function-once
      (fn [block]
        (remove #(and (not (used (:dest %)))
-                     (= "const" (:op %)))
+                     (:dest %))
                block))
      function)))
