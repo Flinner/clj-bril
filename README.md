@@ -1,23 +1,54 @@
 # bril-clj
 
-FIXME: description
+`bril-clj` provides LLVM-like optimizations for
+[Bril](https://capra.cs.cornell.edu/bril/intro.html) the Big Red IR
+(Bril is a compiler intermediate representation for learning).
+
 
 ## Installation
+
+TODO: Build Instructions.
 
 Download from http://example.com/FIXME.
 
 ## Usage
 
+TODO: add `main` function and `args`
 FIXME: explanation
 
     $ java -jar bril-clj-0.1.0-standalone.jar [args]
 
 ## Options
 
-FIXME: listing of options this app accepts.
+FIXME: listing of options this compiler accepts.
 
 ## Examples
 ## Optimizations
+### Dead Code Elemenation: Double Assignment
+Dead Code Elemenation: doubel assignments, this is a *block* level optimization.
+It removes unused variable declarations.
+```python
+  main {
+    a: int = const 4;
+    a: int = const 4;
+    print a;
+  }
+```
+first `a` will be removed.
+### Dead Code Elemenation
+Dead Code Elemenation: unused variable declarations, this is a *function* level optimization.
+It removes unused variable declarations.
+
+  ```python
+  main {
+    a: int = const 4;
+    b: int = const 4;
+    print b;
+  }
+
+  ```
+`a` will be removed.
+
 ### Common Subexpression Elemenation
 Common expressions that are commutative could be identified, such as: `add a b` is equivalent to `add b a`.
 
@@ -133,31 +164,102 @@ Is folded to **this only**! Truly magic! Special thanks to the spirit that lives
 }
 ```
 
-
-
-
-
 ...
 
 ### Bugs
 
 ...
 
-### Any Other Sections
-### That You Think
-### Might be Useful
+## Why Clojure?
+> Lisp is for building organisms—imposing, breathtaking, dynamic
+> structures built by squads fluctuating myriads of simpler organisms
+> into place.  
+> -- *Structure and Interpretation of Programs*
+
+[Clojure](https://clojure.org) is a LISP (LIST Processing)
+language. It is powerful, simple (arguable), flexible, immutable, and
+functional. It is designed for list processing (aka data-first),
+perfect for building compiler.
+
+Clojure's syntax is extremely terse, if python can do in 3 lines what
+C does in 10, clojure can do in 1.
+
+
+Perhaps a code example is worth a thousand words. Here we see a data *pipeline*, where the `lvn-table` flows between
+different optimizations. This example demonstrates elegant high-order
+functions (partial application, or [currying](https://en.wikipedia.org/wiki/Currying).
+
+```clojure
+(->> lvn-table
+     (map (partial optimize:copy-propagation-lvn-args     lvn-table))
+     (map (partial optimize:constant-propagation-lvn-args lvn-table))
+     (map (partial optimize:constant-folding              lvn-table)))
+```
+
+Isn't this elegant? The code contains plethora of such examples, data
+flows cleanly between functions.
+
+To add another example, *constant folding*; relatively not so trivial
+in python, could be done in Clojure with the magic of high-order
+functions.
+
+```clojure
+(defn optimize:constant-folding
+  [lvn-table lvn-row]
+  (let [op-fn ({"add" +, "mul" *, "sub" -, "div" /} (:op (:value lvn-row)))
+        args (->> (-> lvn-row :value :args)                 ;; this resolves to arg indices (0 1)
+                  (map     (partial resolve-arg lvn-table)) ;; resolves to instructions
+                  (map    #(get-in % [:value :value])))]    ;; gets the values...
+    (if (and op-fn (not-any? nil? args))
+      ;; if is a math op, perform math operation
+      (->> (apply op-fn args)
+          ;; construct the new instruction
+           (hash-map :op "const" :value)
+          ;; then replace the instruction
+           (assoc lvn-row :value))
+      ;; else... not an arthimetic operation
+      lvn-row)))
+```
+
+I consider these lines specifically, compared to python:
+
+```clojure
+;; This line set op-fn (operator function) 
+(let [op-fn ({"add" +, "mul" *, "sub" -, "div" /} (:op (:value lvn-row)))]
+;...
+  (apply op-fn args))
+```
+
+Python Equivalent
+```python
+;; op_fn = {
+;;    "add": lambda a, b: a + b,
+;;    "mul": lambda a, b: a * b,
+;;    "sub": lambda a, b: a - b,
+;;    "div": lambda a, b: a / b
+;; }[lvn_row["value"]["op"]]
+;;
+;; result = op_fn(*args)  # Equivalent to (apply op-fn args)
+```
+There is no comparison.
+
+Add to that, Clojure has the [best debugging
+experience](https://valer.dev/posts/clojure-debugging/) I have ever
+seen.
 
 ## License
 
-Copyright © 2025 FIXME
+Copyright © 2025 Flinner Yuu
 
-This program and the accompanying materials are made available under the
-terms of the Eclipse Public License 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-This Source Code may also be made available under the following Secondary
-Licenses when the conditions for such availability set forth in the Eclipse
-Public License, v. 2.0 are satisfied: GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or (at your
-option) any later version, with the GNU Classpath Exception which is available
-at https://www.gnu.org/software/classpath/license.html.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
