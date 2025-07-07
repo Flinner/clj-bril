@@ -131,14 +131,15 @@
           ;; *might* not be added
           new-table-row {:idx new-idx
                          :variable  var-name
-                         :value    {:op   (:op                      instr)
-                                    :args (map var2num
-                                               ;; commutative get their arguments sorted
-                                               ;; enhancment could be made to change a < b to b > a
-                                               ;; I aint doing these "enhancments"! I am in a hurry :(
-                                               ((if (bril/commutative-instr? instr) sort identity)
-                                                (:args instr)))
-                                    :value  (:value                   instr)}
+                         :value
+                         {:op   (:op instr)
+                          :args (map var2num
+                                     ;; commutative get their arguments sorted
+                                     ;; enhancment could be made to change a < b to b > a
+                                     ;; I aint doing these "enhancments"! I am in a hurry :(
+                                     ((if (bril/commutative-instr? instr) sort identity)
+                                      (:args instr)))
+                          :value  (:value instr)}
                          :original-instr instr}
           ;; if the variable exists, get its index
           var2num-idx (value-exists new-table-row table)
