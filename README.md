@@ -234,14 +234,14 @@ I consider these lines specifically, compared to python:
 
 Python Equivalent
 ```python
-;; op_fn = {
-;;    "add": lambda a, b: a + b,
-;;    "mul": lambda a, b: a * b,
-;;    "sub": lambda a, b: a - b,
-;;    "div": lambda a, b: a / b
-;; }[lvn_row["value"]["op"]]
-;;
-;; result = op_fn(*args)  # Equivalent to (apply op-fn args)
+op_fn = {
+   "add": lambda a, b: a + b,
+   "mul": lambda a, b: a * b,
+   "sub": lambda a, b: a - b,
+   "div": lambda a, b: a / b
+}[lvn_row["value"]["op"]]
+
+result = op_fn(*args)  # Equivalent to (apply op-fn args)
 ```
 There is no comparison between how terse Clojure is. (Note: *I added more comments, and split into more lines to simplify for the uninitiated reader, it could have been way more terse*)
 
@@ -255,7 +255,8 @@ manipulated as code, blurring the the line between code and data.
 > represented and manipulated as Lisp data. The importance of this is
 > that there are powerful program-design techniques that rely on the
 > ability to blur the traditional distinction between "passive" data
-> and "active" processes.
+> and "active" processes.  
+> -- *Structure and Interpretation of Programs*
 
 Add to that, Clojure has the [best debugging
 experience](https://valer.dev/posts/clojure-debugging/) I have ever
