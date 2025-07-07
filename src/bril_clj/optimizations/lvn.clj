@@ -43,7 +43,6 @@
   ;;    {:args ["sum1" "sum2"], :dest "prod", :op "mul", :type "int"}}})
   [lvn-table]
   (->> lvn-table
-       vals
        (map (partial subsitute-lvn-args lvn-table))
        (map (partial subsitute-lvn-dest lvn-table))
        (map :original-instr)))
@@ -86,7 +85,7 @@
 
       var2num[instr.dest] = num"
   [block]
-  (loop [table {}
+  (loop [table []
          var2num {}
          [instr & instrs] block]
          ;; Rename vars to avoid overwrites
@@ -110,16 +109,22 @@
           ;; new var2name
           var2num' (assoc var2num (:dest instr) new-idx)
           ;; *might* not be added
-          new-table-row {:variable  var-name
+          new-table-row {:idx new-idx
+                         :variable  var-name
                          :value    {:op   (:op                      instr)
-                                    :args (map var2num (sort (:args instr)))
+                                    :args (map var2num
+                                               ;; commutative get their arguments sorted
+                                               ;; enhancment could be made to change a < b to b > a
+                                               ;; I aint doing these "enhancments"! I am in a hurry :(
+                                               ((if (bril/commutative-instr? instr) sort identity)
+                                                (:args instr)))
                                     :val  (:value                   instr)}
                          :original-instr instr}
           ;; if the variable exists, get its index
           var2num-idx (value-exists new-table-row table)
-          table' (assoc table
-                        new-idx
-                        new-table-row)]
+          table' (conj table
+                        ;new-idx
+                       new-table-row)]
       (cond
        ;; end `recur`
         (nil? instr)    table
@@ -152,8 +157,9 @@
   ```
   "
   [new-table-row table]
-  (some (fn [[k v]] (if (= (:value new-table-row)
-                           (:value v)) k))
+  (some (fn [row] (if (= (:value new-table-row)
+                         (:value row))
+                    (:idx row)))
         table))
 
 (defn var-will-be-overwritten

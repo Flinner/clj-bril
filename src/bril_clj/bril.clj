@@ -18,7 +18,6 @@
   [json]
    ; TODO: use proper $PATH!
   (:out (sh "/home/lambda/.local/bin/bril2txt" :in (json/write-str json))))
-     
 
 (defn brili<-json
   "shell equivelent of `echo $JSON | brili`"
@@ -42,9 +41,6 @@
        (cfg->json)
        (brili-profile<-json)))
 
-
-  
-
 ;;;; JSON to CFG
 (defn json->cfg
   [bril-json]
@@ -58,7 +54,7 @@
 
 ;;;; CFG to JSON 
 (defn cfg->json
- "Example Input:
+  "Example Input:
     ```
     ({:name \"main\",
     :args nil,
@@ -99,7 +95,6 @@
        (map #(into {} %))
        (#(hash-map :functions %))))
 
-;;;; Private Helpers!
 ; Helper functions
 (defn control-instr?
   [instr]
@@ -109,15 +104,18 @@
 (defn terminator-instr?
   [instr]
   (some #(= (:op instr) %) '("jmp" "br" "ret")))
+
 (defn label-instr? [instr] ((complement nil?) (:label instr)))
+
+(defn commutative-instr?
+  [instr]
+  (some #(= (:op instr) %) '("add" "mul" "eq" "or" "and")))
 
 ;; ;; Move to Testing??
 ;; (control-instr? {:dest "v", :op "const", :type "int", :value 4})
 ;; (control-instr? {:labels ["somewhere"], :op "jmp"})
 ;; (label-instr? {:label "somewhere"})
 ;; (label-instr? {:labels ["somewhere"], :op "jmp"})
-
-
 
 (defn- form-blocks
   "Takes the body of a SINGLE function"
@@ -177,6 +175,6 @@
   ;   {:label \"somewhere\", :succ [] :block [...]}))          ; Exit!
   ; ]
   ; we need to resolve the `:succ`
-   (->> cfg-indexed
-        (mapv (fn [block]
-                (update block :succ (partial mapv #(get-in cfg-indexed [% :label]))))))))
+    (->> cfg-indexed
+         (mapv (fn [block]
+                 (update block :succ (partial mapv #(get-in cfg-indexed [% :label]))))))))

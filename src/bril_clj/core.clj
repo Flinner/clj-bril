@@ -36,12 +36,12 @@
 ;;      {:args ["v0" "v1"], :dest "v2", :op "add", :type "int"}
 ;;      {:args ["v2"], :op "print"}]}])
 
-(->> "./test/bril_files/parse/positions.bril"
+(->> "./test/bril_files/parse/float.bril"
      bril/txt->json
      bril/json->cfg
      ((partial opt/apply-block-optimization-to-cfg-once          optlvn/lvn))
-     ((partial opt/apply-block-optimization-until-convergence    optdc/block|DCE-double-assignment))
-     ((partial opt/apply-function-optimization-until-convergence optdc/function|DCE-unused-variable-declarations))
+     ;; ((partial opt/apply-block-optimization-until-convergence    optdc/block|DCE-double-assignment))
+     ;; ((partial opt/apply-function-optimization-until-convergence optdc/function|DCE-unused-variable-declarations))
      bril/cfg->json
      bril/json->txt
      println)
