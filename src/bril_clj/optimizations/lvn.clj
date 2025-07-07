@@ -20,27 +20,18 @@
 (defn- lvn-table->instrs
   "Restore the LVN table back to instrs"
   ;; Example Data Input
-  ;; ({0
-  ;;   {:variable "a-0",
+  ;; [{ :idx 0
+  ;;    :variable "a-0",
   ;;    :value {:op "const", :args (), :val 4},
   ;;    :original-instr {:dest "a", :op "const", :type "int", :value 4}},
-  ;;   1
   ;;   {:variable "sum1-1",
+  ;;    :idx 1
   ;;    :value {:op "add", :args (0 0), :val nil},
   ;;    :original-instr {:args ["a" "b"], :dest "sum1", :op "add", :type "int"}},
-  ;;   2
   ;;   {:variable "a-2",
+  ;;    :idx 2
   ;;    :value {:op "const", :args (), :val 8},
-  ;;    :original-instr {:dest "a", :op "const", :type "int", :value 8}},
-  ;;   3
-  ;;   {:variable "sum2-3",
-  ;;    :value {:op "add", :args (2 0), :val nil},
-  ;;    :original-instr {:args ["a" "b"], :dest "sum2", :op "add", :type "int"}},
-  ;;   4
-  ;;   {:variable "prod-4",
-  ;;    :value {:op "mul", :args (1 3), :val nil},
-  ;;    :original-instr
-  ;;    {:args ["sum1" "sum2"], :dest "prod", :op "mul", :type "int"}}})
+  ;;    :original-instr {:dest "a", :op "const", :type "int", :value 8}}] 
   [lvn-table]
   (->> lvn-table
        (map (partial subsitute-lvn-args lvn-table))
@@ -148,12 +139,12 @@
   "If the value exists return its index, otherwise `nil`
   Example Input:
   ```
-   {0 {:variable \"v0-0\", :value {:op \"const\", :args (), :val 1}},
-    1 {:variable \"v1-1\", :value {:op \"const\", :args (), :val 2}},
-    2 {:variable \"v1-2\", :value {:op \"const\", :args (), :val 3}},
-    3 {:variable \"v1-3\", :value {:op \"const\", :args (), :val 4}},
-    4 {:variable \"v2-4\", :value {:op \"add\", :args (0 3), :val nil}},
-    5 {:variable \"v3-5\", :value {:op \"add\", :args (0 3), :val nil}}}
+   [{:idx 0 :variable \"v0-0\", :value {:op \"const\", :args (), :val 1}},
+    {:idx 1 :variable \"v1-1\", :value {:op \"const\", :args (), :val 2}},
+    {:idx 2 :variable \"v1-2\", :value {:op \"const\", :args (), :val 3}},
+    {:idx 3 :variable \"v1-3\", :value {:op \"const\", :args (), :val 4}},
+    {:idx 4 :variable \"v2-4\", :value {:op \"add\", :args (0 3), :val nil}},
+    {:idx 5 :variable \"v3-5\", :value {:op \"add\", :args (0 3), :val nil}}]
   ```
   "
   [new-table-row table]
@@ -179,9 +170,10 @@
               ;; this is madness i am losing my mind!!!
               (let [original-args (get-in lvn-row [:original-instr :args])
                     modified-args (map (fn [arg]
-                                         (get (lvn-table arg) :variable arg))
+                                         (get-in (filter #(= arg (:idx %)) lvn-table) [0 :variable]))
                                        (get-in lvn-row [:value :args]))]
-                ;; if some of the modified args are nil, it means lol
+                ;; if some of the modified args are nil, it means I should use the original args
+                ;; I forgot why!!
                 (if (some nil? modified-args)
                   original-args
                   modified-args)))))
