@@ -171,15 +171,17 @@ Is folded to **this only**! Truly magic! Special thanks to the spirit that lives
 ...
 
 ## Why Clojure?
-> Lisp is for building organisms—imposing, breathtaking, dynamic
-> structures built by squads fluctuating myriads of simpler organisms
-> into place.  
+> The ability to represent procedures as data also makes Lisp an
+> excellent language for writing programs that must manipulate other
+> programs as data, such as the interpreters and compilers that
+> support computer languages. Above
+> and beyond these considerations, programming in Lisp is great fun.  
 > -- *Structure and Interpretation of Programs*
 
-[Clojure](https://clojure.org) is a LISP (LIST Processing)
+[Clojure](https://clojure.org) is a LISP (LISt Processing)
 language. It is powerful, simple (arguable), flexible, immutable, and
 functional. It is designed for list processing (aka data-first),
-perfect for building compiler.
+perfect for building compilers.
 
 Clojure's syntax is extremely terse, if python can do in 3 lines what
 C does in 10, clojure can do in 1.
@@ -187,7 +189,7 @@ C does in 10, clojure can do in 1.
 
 Perhaps a code example is worth a thousand words. Here we see a data *pipeline*, where the `lvn-table` flows between
 different optimizations. This example demonstrates elegant high-order
-functions (partial application, or [currying](https://en.wikipedia.org/wiki/Currying).
+functions (partial application, or [currying](https://en.wikipedia.org/wiki/Currying)).
 
 ```clojure
 (->> lvn-table
@@ -201,7 +203,7 @@ flows cleanly between functions.
 
 To add another example, *constant folding*; relatively not so trivial
 in python, could be done in Clojure with the magic of high-order
-functions.
+functions. 
 
 ```clojure
 (defn optimize:constant-folding
@@ -241,7 +243,19 @@ Python Equivalent
 ;;
 ;; result = op_fn(*args)  # Equivalent to (apply op-fn args)
 ```
-There is no comparison.
+There is no comparison between how terse Clojure is. (Note: *I added more comments, and split into more lines to simplify for the uninitiated reader, it could have been way more terse*)
+
+If you wonder what is
+[`->>`](https://clojure.org/guides/threading_macros), it is a
+threading *macro*, yeah Clojure allows the code *itself* to be
+manipulated as code, blurring the the line between code and data.
+
+> Te most significant of these features is the fact that Lisp
+> descriptions of processes, called procedures, can themselves be
+> represented and manipulated as Lisp data. The importance of this is
+> that there are powerful program-design techniques that rely on the
+> ability to blur the traditional distinction between "passive" data
+> and "active" processes.
 
 Add to that, Clojure has the [best debugging
 experience](https://valer.dev/posts/clojure-debugging/) I have ever
