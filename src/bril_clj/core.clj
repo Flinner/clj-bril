@@ -14,8 +14,8 @@
   [& args]
   (println "Hello, World!"))
 
-;; (def bril-json (bril/txt->json "./test/bril_files/parse/positions.bril"))
-;; (def cfg (bril/json->cfg bril-json))
+(def bril-json (bril/txt->json "./test/bril_files/parse/float.bril"))
+(def cfg (bril/json->cfg bril-json))
 
 ;; (def body
 ;;   [{:label :b0,
@@ -47,6 +47,10 @@
 (->> "./test/bril_files/parse/float.bril"
      bril/txt->json
      bril/json->cfg
+     ((partial opt/apply-block-optimization-to-cfg-once          optlvn/lvn))
+     debug
+     ((partial opt/apply-block-optimization-until-convergence    optdc/block|DCE-double-assignment))
+     ((partial opt/apply-function-optimization-until-convergence optdc/function|DCE-unused-variable-declarations))
      ((partial opt/apply-block-optimization-to-cfg-once          optlvn/lvn))
      debug
      ((partial opt/apply-block-optimization-until-convergence    optdc/block|DCE-double-assignment))

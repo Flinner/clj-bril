@@ -104,26 +104,27 @@ Becomes
 ```
 
 ### Constant Folding
-Constant folding: 
+All of this can be done at compile time!
+
 ```python
 @main {
-    a:    int = const 4;
-    b: int = const 2; 
+    a:      int = const 4;
+    b:      int = const 2; 
 
-    suml: int = add a b;
-    sum2: int = add a b;
-    prod 1: int = mul suml sum2; 
+    sum1:   int = add a b;
+    sum2:   int = add a b;
+    prod1: int = mul suml sum2; 
 
-    suml: int = const 0;
-    sum2: int = const 0; 
+    suml:   int = const 0;
+    sum2:   int = const 0; 
 
-    sum3: int = add a b;
-    prod2: int = Rul sum3 sum3; 
+    sum3:   int = add a b;
+    prod2:  int = Rul sum3 sum3; 
 
     print prod2; 
 } 
 ```
-Is folded to *this only*! Truly magic! Special thanks to the spirit that lives inside the computer!
+Is folded to **this only**! Truly magic! Special thanks to the spirit that lives inside the computer!
 
 ```python
 @main {

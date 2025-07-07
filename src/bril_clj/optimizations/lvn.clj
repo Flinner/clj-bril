@@ -1,6 +1,5 @@
 (ns bril-clj.optimizations.lvn
-  (:require [bril-clj.optimizations.core :as opt]
-            [bril-clj.bril :as bril]))
+  (:require [bril-clj.bril :as bril]))
 
 (declare
  value-exists
@@ -12,6 +11,7 @@
  block->lvn-table
  optimize-lvn-table
  resolve-arg
+ resolve-arg-recursively
  optimize:copy-propagation-lvn-args
  optimize:constant-propagation-lvn-args
  optimize:constant-folding
@@ -63,8 +63,8 @@
   [lvn-table]
   (->> lvn-table
        (map (partial subsitute-lvn-dest lvn-table))
-       (map (partial subsitute-lvn-op   lvn-table))
        (map (partial subsitute-lvn-args lvn-table))
+       (map (partial subsitute-lvn-op   lvn-table))
        (map :original-instr)))
 
 (defn- block->lvn-table
@@ -261,40 +261,39 @@
              :value (:value new-row)))))
 
 (defn- optimize:constant-folding
-  "Chains of assignment can directly refer to the original variable.
+  "Fold constants! Compile time operations!
   
   ```python
   @main {
-      x: int = const 4;
-      copy1: int = id x;
-      copy2: int = id copy1;
-      copy3: int = id copy2;
-      print copy3;
+      a: int   = const 4;
+      b: int   = const 1;
+
+      sum: int = add a b;
+      print sum;
   }
   ```
 
-  Gets optimized with copy propagation to:
+  Gets optimized with constant folding
   ```python
   @main {
-      x: int = const 4;
-      copy1: int = id x;
-      copy2: int = id x;
-      copy3: int = id x;
-      print copy3;
+     sum: int = const 5;
+     print sum;
   }
   ```"
   [lvn-table lvn-row]
-  (let [original-instr (:original-instr lvn-row)
-        original-args  (:args original-instr)
-        args-idxs      (:args (:value lvn-row))]
-    (if-not original-args
-     ;; doesn't have args, do nothing.
-      lvn-row
-     ;; else
-      (update-in lvn-row
-                 [:value :args]
-                 (fn [old-args]
-                   (map (partial resolve-arg-recursively lvn-table) old-args))))))
+  (let [op-fn ({"add" +, "mul" *, "sub" -, "div" /} (:op (:value lvn-row)))
+        args (->> (-> lvn-row :value :args)                 ;; this resolves to arg indices (0 1)
+                  (map     (partial resolve-arg lvn-table)) ;; resolves to instructions
+                  (map    #(get-in % [:value :value])))]    ;; gets the values...
+    (if (and op-fn (not-any? nil? args))
+      ;; if is a math op, perform math operation
+      (->> (apply op-fn args)
+          ;; construct the new instruction
+           (hash-map :op "const" :value)
+          ;; then replace the instruction
+           (assoc lvn-row :value))
+      ;; else... not an arthimetic operation
+      lvn-row)))
 
 (defn- resolve-arg-to-variable
   [lvn-table arg-idx]
