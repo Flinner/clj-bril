@@ -9,13 +9,36 @@
  args-from-table
  subsitute-lvn-dest
  block->lvn-table
+ optimize-lvn-table
+ resolve-arg
+ optimize:copy-propagation-lvn-args
  lvn-table->instrs)
 
 (defn lvn
   [block]
   (->> block
        block->lvn-table
+       optimize-lvn-table
        lvn-table->instrs))
+
+(defn- optimize-lvn-table
+  "Restore the LVN table back to instrs"
+  ;; Example Data Input
+  ;; [{ :idx 0
+  ;;    :variable "a-0",
+  ;;    :value {:op "const", :args (), :val 4},
+  ;;    :original-instr {:dest "a", :op "const", :type "int", :value 4}},
+  ;;   {:variable "sum1-1",
+  ;;    :idx 1
+  ;;    :value {:op "add", :args (0 0), :val nil},
+  ;;    :original-instr {:args ["a" "b"], :dest "sum1", :op "add", :type "int"}},
+  ;;   {:variable "a-2",
+  ;;    :idx 2
+  ;;    :value {:op "const", :args (), :val 8},
+  ;;    :original-instr {:dest "a", :op "const", :type "int", :value 8}}] 
+  [lvn-table]
+  (->> lvn-table
+       (map (partial optimize:copy-propagation-lvn-args lvn-table))))
 
 (defn- lvn-table->instrs
   "Restore the LVN table back to instrs"
@@ -158,6 +181,55 @@
   (if-let [var (:dest instr)]
     (some #(= (:dest %) var) instrs)))
 
+(defn- optimize:copy-propagation-lvn-args
+  "Chains of assignment can directly refer to the original variable.
+  
+  ```python
+  @main {
+      x: int = const 4;
+      copy1: int = id x;
+      copy2: int = id copy1;
+      copy3: int = id copy2;
+      print copy3;
+  }
+  ```
+
+  Gets optimized with copy propagation to:
+  ```python
+  @main {
+      x: int = const 4;
+      copy1: int = id x;
+      copy2: int = id x;
+      copy3: int = id x;
+      print copy3;
+  }
+  ```"
+  [lvn-table lvn-row]
+  (let [original-instr (:original-instr lvn-row)
+        original-args  (:args original-instr)
+        args-idxs      (:args (:value lvn-row))])
+  (if-not (:args (:original-instr lvn-row))
+    ;; doesn't have args, do nothing.
+    lvn-row
+    ;; else
+    (update-in lvn-row
+               [:value :args]
+               (fn [old-args]
+                 (map (partial resolve-arg-recursively lvn-table) old-args)))))
+
+(defn- resolve-arg
+  [lvn-table arg-idx]
+  (get (first (filter #(= arg-idx (:idx %)) lvn-table)) :variable))
+
+(defn- resolve-arg-recursively
+  [lvn-table old-arg-idx]
+  (let [lvn-row (first (filter #(= old-arg-idx (:idx %)) lvn-table))
+        new-idx (first (:args (:value lvn-row)))
+        is-id   (= "id" (:op (:value lvn-row)))]
+    (if (and is-id new-idx)
+      (resolve-arg-recursively lvn-table new-idx)
+      old-arg-idx)))
+
 (defn- subsitute-lvn-args
   "Change original args to the args from table"
   [lvn-table lvn-row]
@@ -169,11 +241,9 @@
               [:original-instr :args]
               ;; this is madness i am losing my mind!!!
               (let [original-args (get-in lvn-row [:original-instr :args])
-                    modified-args (map (fn [arg]
-                                         (get-in (filter #(= arg (:idx %)) lvn-table) [0 :variable]))
+                    modified-args (map (partial resolve-arg lvn-table)
                                        (get-in lvn-row [:value :args]))]
                 ;; if some of the modified args are nil, it means I should use the original args
-                ;; I forgot why!!
                 (if (some nil? modified-args)
                   original-args
                   modified-args)))))
