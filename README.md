@@ -103,10 +103,11 @@ With dead code elimination:
     print copy3;
 }
 ```
-Later, with constant folding (TODO) can directly do:
+Later, with constant folding can directly do:
 
 ```python
 @main {
+    x: int = const 4;
     print 4; # Amazing!
 }
 ```
