@@ -25,7 +25,7 @@ FIXME: listing of options this compiler accepts.
 ## Examples
 ## Optimizations
 ### Dead Code Elemenation: Double Assignment
-Dead Code Elemenation: doubel assignments, this is a *block* level optimization.
+Dead Code Elemenation: double assignments, this is a *block* level optimization.
 It removes unused variable declarations.
 ```python
   main {
@@ -112,7 +112,7 @@ Later, with constant folding (TODO) can directly do:
 ```
 
 ### Constant Propagation
-Similar to [Constant Propagation](#constant-propagation), but the constant itself propagates (as the name implies!).
+Similar to [Copy Propagation](#copy-propagation), but the constant itself propagates (as the name implies!).
 
 ```python
 @main {
