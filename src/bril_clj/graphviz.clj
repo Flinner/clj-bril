@@ -6,8 +6,7 @@
   "Convert a CFG to graphviz string"
   [cfg]
   (->> cfg
-       (map :instrs)
-       (apply concat)
+       (mapcat :instrs)
       ;; [[:b0
       ;;   {:block [...],
       ;;    :succ [:somewhere]}]
@@ -19,7 +18,7 @@
       ;;    :succ [nil]}]]
 
        (map (fn [block]
-              {:label (first block), :succ (:succ (second block))}))
+              {:label (:label block), :succ (:succ block)}))
       ;; ({:label :b1, :succ [:somewhere]}
       ;;  {:label :b0, :succ [:somewhere]}
       ;;  {:label :somewhere, :succ [nil]})
@@ -30,8 +29,8 @@
        (apply str)
        (#(str "digraph" " " "EXAMPLE_TODO" " " "{\n" % "}"))))
 
-
 (defn graphviz->feh [graphviz]
-  (sh "/bin/bash" "-c" (str "echo \"" graphviz "\" | dot -Tpng | feh -")))
+  (future
+    (sh "/bin/bash" "-c" (str "echo \"" graphviz "\" | dot -Tpng | feh -"))))
 
 ;; (graphviz->feh (cfg->graphviz cfg))
