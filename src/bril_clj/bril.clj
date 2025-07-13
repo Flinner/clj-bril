@@ -124,7 +124,7 @@
          blocks []
          [instr & remaining-body] body]
     (if-not instr
-      (if (empty? cur-block) blocks (conj blocks cur-block)) ; in last iteration, merge last block with rest of blocks
+      (remove empty? (conj blocks cur-block)) ; in last iteration, merge last block with rest of blocks
       (let [cur-block+cur-instr  (conj cur-block instr)
             blocks+cur-block     (conj blocks cur-block)
             blocks+cur-block+cur-instr (conj blocks cur-block+cur-instr)]
@@ -181,6 +181,9 @@
     (->> cfg-indexed
          (mapv (fn [block]
                  (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
+         ;; remove nil `:succ`!!! it breaks my data flow!!! fuck I am pissed
+         (mapv (fn [block]
+                 (update block :succ (partial remove nil?))))
          ;; Gen `:pred`. Yes this code sucks ass.
          ((fn [cfg]
             (map (fn [block]

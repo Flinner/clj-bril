@@ -24,8 +24,8 @@ FIXME: listing of options this compiler accepts.
 
 ## Examples
 ## Optimizations
-### Dead Code Elemenation: Double Assignment
-Dead Code Elemenation: double assignments, this is a *block* level optimization.
+### Dead Code Elimination: Double Assignment
+Dead Code Elimination: double assignments, this is a *block* level optimization.
 It removes unused variable declarations.
 ```python
   main {
@@ -35,8 +35,8 @@ It removes unused variable declarations.
   }
 ```
 first `a` will be removed.
-### Dead Code Elemenation
-Dead Code Elemenation: unused variable declarations, this is a *function* level optimization.
+### Dead Code Elimination
+Dead Code Elimination: unused variable declarations, this is a *function* level optimization.
 It removes unused variable declarations.
 
   ```python
@@ -49,7 +49,7 @@ It removes unused variable declarations.
   ```
 `a` will be removed.
 
-### Common Subexpression Elemenation
+### Common Subexpression Elimination
 Common expressions that are commutative could be identified, such as: `add a b` is equivalent to `add b a`.
 
 ```python
@@ -251,7 +251,7 @@ If you wonder what is
 threading *macro*, yeah Clojure allows the code *itself* to be
 manipulated as code, blurring the the line between code and data.
 
-> Te most significant of these features is the fact that Lisp
+> The most significant of these features is the fact that Lisp
 > descriptions of processes, called procedures, can themselves be
 > represented and manipulated as Lisp data. The importance of this is
 > that there are powerful program-design techniques that rely on the
