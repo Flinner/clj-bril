@@ -21,3 +21,9 @@
                      f
                      bril/json->cfg
                      bril/txt->json)))
+
+;; https://stackoverflow.com/a/3249777
+(defn in?
+  "true if coll contains elm"
+  [coll elm]
+  (some #(= elm %) coll))

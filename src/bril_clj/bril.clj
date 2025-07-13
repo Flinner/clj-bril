@@ -147,12 +147,15 @@
   ```clojure
       ({:label :b0,
         :succ [:somewhere],
+        :pred [],
         :block [...]}
        {:label :b1,
         :succ [:somewhere],
+        :pred [:b0],
         :block [...]}
        {:label :somewhere,
         :succ [nil],
+        :pred [:b1],
         :block [...]})
   ```
   "
@@ -177,4 +180,10 @@
   ; we need to resolve the `:succ`
     (->> cfg-indexed
          (mapv (fn [block]
-                 (update block :succ (partial mapv #(get-in cfg-indexed [% :label]))))))))
+                 (update block :succ (partial mapv #(get-in cfg-indexed [% :label])))))
+         ;; Gen `:pred`. Yes this code sucks ass.
+         ((fn [cfg]
+            (map (fn [block]
+                   (assoc block :pred
+                          (mapv :label (filter #(bril-clj.utils/in? (:succ %) (:label block)) cfg))))
+                 cfg))))))
